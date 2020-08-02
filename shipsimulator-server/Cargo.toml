@@ -1,0 +1,19 @@
+[package]
+name = "shipsimulatorserver"
+version = "0.1.0"
+authors = ["Oscar Veldman"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hmac = "0.8.1"
+jwt = "0.10.0"
+rocket = "0.4.5"
+rocket_codegen = "0.4.5"
+rocket_contrib = "0.4.5"
+rust-crypto = "0.2.36"
+rustc-serialize = "0.3.24"
+serde = { version = "1.0.114", features = ["derive"] }
+sha2 = "0.9.1"
+shipsimulatorbl = { path = "../shipsimulator-bl"}
