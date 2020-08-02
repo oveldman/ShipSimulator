@@ -1,5 +1,4 @@
 use hmac::{Hmac, NewMac};
-
 use jwt::SignWithKey;
 use jwt::VerifyWithKey;
 use sha2::Sha256;
@@ -8,6 +7,8 @@ use serde::{Deserialize, Serialize};
 
 use rocket::Outcome;
 use rocket::request::{self, Request, FromRequest};
+
+use shipsimulatorbl::authenticator;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -26,9 +27,12 @@ pub fn read_token(token: &str) -> BTreeMap<String, String>  {
 }
 
 pub fn create_token(user_id: &str) -> String {
+    let cookie_id: String = authenticator::generate_cookie_id(user_id);
+
     let key: Hmac<Sha256> = HmacSha256::new_varkey(b"some-secret").unwrap();
     let mut claims = BTreeMap::new();
-    claims.insert("sub", user_id);
+    claims.insert("id", cookie_id);
+    claims.insert("sub", user_id.to_string());
     claims.sign_with_key(&key).unwrap()
 }
 
@@ -40,6 +44,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for ApiKey {
         if keys.len() != 1 {
             return Outcome::Forward(());
         }
+
         let claims = read_token(keys[0]);
 
         if claims.len() != 0 && claims.contains_key("sub") {
