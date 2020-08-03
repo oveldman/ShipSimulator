@@ -32,7 +32,7 @@ pub fn create_token(user_id: &str) -> String {
     let key: Hmac<Sha256> = HmacSha256::new_varkey(b"some-secret").unwrap();
     let mut claims = BTreeMap::new();
     claims.insert("id", cookie_id);
-    claims.insert("sub", user_id.to_string());
+    claims.insert("user", user_id.to_string());
     claims.sign_with_key(&key).unwrap()
 }
 
@@ -45,13 +45,22 @@ impl<'a, 'r> FromRequest<'a, 'r> for ApiKey {
             return Outcome::Forward(());
         }
 
-        let claims = read_token(keys[0]);
-
-        if claims.len() != 0 && claims.contains_key("sub") {
-            let claim = String::from(&claims["sub"]);
-            return Outcome::Success(ApiKey(claim));
-        }
-
-        Outcome::Forward(())
+        let claims: BTreeMap<String, String> = read_token(keys[0]);
+        check_claim(claims)
     }
 }
+
+fn check_claim(claims: BTreeMap<String, String>) -> request::Outcome<ApiKey, ()> {
+    if claims.len() != 0 && claims.contains_key("user") && claims.contains_key("id") {
+        let user: String = String::from(&claims["user"]);
+        let cookie_id: String = String::from(&claims["id"]);
+        let cookie_found: bool = authenticator::check_cookie_id(&user, &cookie_id);
+
+        if cookie_found {
+            return Outcome::Success(ApiKey(user));
+        }
+    }
+
+    Outcome::Forward(())
+}
+

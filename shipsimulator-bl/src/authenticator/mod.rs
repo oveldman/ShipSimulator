@@ -13,12 +13,21 @@ pub fn check_account(username: &str, password: &str) -> bool {
     }
 }
 
+pub fn check_cookie_id(username: &str, cookie_id: &str) -> bool {
+    let account: Option<User> = query::get_account(username);
+
+    match account {
+        None => return false,
+        Some(user) => return user.cookie_id == cookie_id,
+    }
+}
+
 pub fn generate_cookie_id(username: &str) -> String {
     let random_id: String = thread_rng()
     .sample_iter(&Alphanumeric)
     .take(30)
     .collect();
 
-    let update_succeed = query::set_cookie_id(username, &random_id);
+    query::set_cookie_id(username, &random_id);
     random_id
 }

@@ -26,7 +26,7 @@ pub fn get_account(name: &str) -> Option<User> {
 pub fn set_cookie_id(name: &str, new_cookie_id: &str) -> bool {
     let connection = db::establish_connection();
 
-    let account = diesel::update(users.filter(username.eq(name)))
+    diesel::update(users.filter(username.eq(name)))
                 .set(cookie_id.eq(new_cookie_id))
                 .get_result::<User>(&connection)
                 .expect("Error updating user");
