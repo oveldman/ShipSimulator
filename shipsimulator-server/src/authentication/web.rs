@@ -5,17 +5,6 @@ use crate::authentication::User;
 use crate::authentication::loginmanager::{self, ApiKey, LoginResult};
 use shipsimulatorbl::authenticator;
 
-
-#[get("/succeed")]
-fn succeed(_key: ApiKey) -> &'static str {
-    "true - You are logged in!"
-}
-
-#[get("/succeed", rank = 2)] 
-fn succeed_error() -> &'static str {
-    "false - You are not logged in!"
-}
-
 #[post("/login", format = "json", data = "<user>")]
 fn login(user: Json<User>) -> Json<LoginResult> {
     let username = user.username.to_string();
@@ -36,6 +25,28 @@ fn login(user: Json<User>) -> Json<LoginResult> {
     })
 }
 
+#[get("/logout")]
+fn logout(key: ApiKey) -> &'static str  {
+    loginmanager::delete_token(key);
+    logout_message()
+}
+
+#[get("/logout", rank = 2)]
+fn logout_message() -> &'static str  {
+    "You are now logout"
+}
+
+#[get("/succeed")]
+fn succeed(key: ApiKey) -> &'static str {
+    println!("{:?}", key);
+    "true - You are logged in!"
+}
+
+#[get("/succeed", rank = 2)] 
+fn succeed_error() -> &'static str {
+    "false - You are not logged in!"
+}
+
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
-    rocket.mount("/auth", routes![login, succeed, succeed_error])
+    rocket.mount("/auth", routes![login, logout, logout_message, succeed, succeed_error])
 }

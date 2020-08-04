@@ -10,8 +10,12 @@ use rocket::request::{self, Request, FromRequest};
 
 use shipsimulatorbl::authenticator;
 
+// This is temporarily. Soon it will go to settings.
+const SECRET_KEY: [u8; 30] = *b"eacukoj5aPCnNMruQHsF4amkbNaGgh";
+
 type HmacSha256 = Hmac<Sha256>;
 
+#[derive(Debug)]
 pub struct ApiKey(pub String);
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,20 +24,26 @@ pub struct LoginResult {
     pub error: String
 }
 
-pub fn read_token(token: &str) -> BTreeMap<String, String>  {
-    let key: Hmac<Sha256> = HmacSha256::new_varkey(b"some-secret").unwrap();
-    let claims: BTreeMap<String, String> = token.verify_with_key(&key).unwrap();
-    claims
-}
-
 pub fn create_token(user_id: &str) -> String {
     let cookie_id: String = authenticator::generate_cookie_id(user_id);
 
-    let key: Hmac<Sha256> = HmacSha256::new_varkey(b"some-secret").unwrap();
+    let key: Hmac<Sha256> = HmacSha256::new_varkey(&SECRET_KEY).unwrap();
     let mut claims = BTreeMap::new();
     claims.insert("id", cookie_id);
     claims.insert("user", user_id.to_string());
+    println!("{:?}", claims);
     claims.sign_with_key(&key).unwrap()
+}
+
+pub fn delete_token(key: ApiKey) {
+    let username: String = key.0;
+    authenticator::remove_cookie_id(&username);
+}
+
+pub fn read_token(token: &str) -> BTreeMap<String, String>  {
+    let key: Hmac<Sha256> = HmacSha256::new_varkey(&SECRET_KEY).unwrap();
+    let claims: BTreeMap<String, String> = token.verify_with_key(&key).unwrap();
+    claims
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for ApiKey {
