@@ -4,5 +4,6 @@ table! {
         username -> Varchar,
         encrypted_password -> Varchar,
         cookie_id -> Varchar,
+        login_expired_at -> Timestamptz,
     }
 }

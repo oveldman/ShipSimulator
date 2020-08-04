@@ -1,3 +1,4 @@
+use chrono::{ DateTime, Utc };
 use diesel::prelude::*;
 
 use crate::db;
@@ -23,11 +24,14 @@ pub fn get_account(name: &str) -> Option<User> {
     None
 }
 
-pub fn set_cookie_id(name: &str, new_cookie_id: &str) -> bool {
+pub fn set_cookie_id(name: &str, new_cookie_id: &str, login_will_expire_at: &DateTime<Utc>) -> bool {
     let connection = db::establish_connection();
 
     diesel::update(users.filter(username.eq(name)))
-                .set(cookie_id.eq(new_cookie_id))
+                .set((
+                    cookie_id.eq(new_cookie_id),
+                    login_expired_at.eq(login_will_expire_at)
+                ))
                 .get_result::<User>(&connection)
                 .expect("Error updating user");
 
