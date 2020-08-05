@@ -16,7 +16,7 @@ pub struct Claim {
 }
 
 #[derive(Clone, Queryable)]
-pub struct Claim_User{
+pub struct ClaimUser {
     pub id: i32,
     pub claim_id: i32,
     pub user_id: i32

@@ -10,13 +10,29 @@ use rocket::request::{self, Request, FromRequest};
 
 use shipsimulatorbl::authenticator;
 
+const USERNAME_CLAIM: &str = "user";
+const ID_CLAIM: &str = "id";
+const NAME_CLAIM: &str = "claim";
+
 // This is temporarily. Soon it will go to settings.
 const SECRET_KEY: [u8; 30] = *b"eacukoj5aPCnNMruQHsF4amkbNaGgh";
 
 type HmacSha256 = Hmac<Sha256>;
 
 #[derive(Debug)]
-pub struct ApiKey(pub String);
+pub struct ApiKey {
+    pub username: String,
+    pub claims: Vec<String>
+}
+
+impl ApiKey {
+    pub fn new(new_username: String, new_claims: Vec<String>) -> ApiKey {
+        ApiKey {
+            username: new_username,
+            claims: new_claims
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginResult {
@@ -29,14 +45,14 @@ pub fn create_token(user_id: &str) -> String {
 
     let key: Hmac<Sha256> = HmacSha256::new_varkey(&SECRET_KEY).unwrap();
     let mut claims = BTreeMap::new();
-    claims.insert("id", cookie_id);
-    claims.insert("user", user_id.to_string());
+    claims.insert(ID_CLAIM, cookie_id);
+    claims.insert(USERNAME_CLAIM, user_id.to_string());
     println!("{:?}", claims);
     claims.sign_with_key(&key).unwrap()
 }
 
 pub fn delete_token(key: ApiKey) {
-    let username: String = key.0;
+    let username: String = key.username;
     authenticator::remove_cookie_id(&username);
 }
 
@@ -61,13 +77,25 @@ impl<'a, 'r> FromRequest<'a, 'r> for ApiKey {
 }
 
 fn check_claim(claims: BTreeMap<String, String>) -> request::Outcome<ApiKey, ()> {
-    if claims.len() != 0 && claims.contains_key("user") && claims.contains_key("id") {
-        let user: String = String::from(&claims["user"]);
-        let cookie_id: String = String::from(&claims["id"]);
+    if claims.len() != 0 && claims.contains_key(USERNAME_CLAIM) && claims.contains_key(ID_CLAIM) {
+        let user: String = String::from(&claims[USERNAME_CLAIM]);
+        let cookie_id: String = String::from(&claims[ID_CLAIM]);
         let cookie_found: bool = authenticator::check_cookie_id(&user, &cookie_id);
 
+        let mut claim_id = 0;
+        let mut claim_names: Vec<String> = Vec::new();
+        while claim_id < claims.len() {
+            let claim_name = String::from(NAME_CLAIM) + &claim_id.to_string();
+            if claims.contains_key(&claim_name) {
+                claim_names.push(String::from(&claims[&claim_name]));
+                claim_id = claim_id + 1;
+            } else {
+                break;
+            }
+        }
+
         if cookie_found {
-            return Outcome::Success(ApiKey(user));
+            return Outcome::Success(ApiKey::new(user, claim_names));
         }
     }
 

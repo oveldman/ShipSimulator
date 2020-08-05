@@ -1,7 +1,7 @@
 use rocket;
 use rocket_contrib::json::Json;
 
-use crate::authentication::User;
+use crate::authentication::{EditUser, User, WebResult};
 use crate::authentication::loginmanager::{self, ApiKey, LoginResult};
 use shipsimulatorbl::authenticator;
 
@@ -22,6 +22,14 @@ fn login(user: Json<User>) -> Json<LoginResult> {
     Json(LoginResult {
         token: new_token,
         error: error_message
+    })
+}
+
+#[post("/changepassword", format = "json", data="<edit_user>")]
+fn change_password(edit_user: Json<EditUser>) -> Json<WebResult> {
+    Json(WebResult {
+        succeed: false,
+        message: String::from("Not finished yet")
     })
 }
 
