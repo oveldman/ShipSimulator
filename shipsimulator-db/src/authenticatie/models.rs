@@ -8,3 +8,16 @@ pub struct User {
     pub cookie_id: String,
     pub login_expired_at: DateTime<Utc>
 }
+
+#[derive(Clone, Queryable)]
+pub struct Claim {
+    pub id: i32,
+    pub name: String
+}
+
+#[derive(Clone, Queryable)]
+pub struct Claim_User{
+    pub id: i32,
+    pub claim_id: i32,
+    pub user_id: i32
+}
