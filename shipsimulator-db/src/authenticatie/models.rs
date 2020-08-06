@@ -1,6 +1,8 @@
 use chrono::{ DateTime, Utc };
 
-#[derive(Clone, Queryable)]
+use crate::db::schema::*;
+
+#[derive(Associations, Clone, Debug, Identifiable, Queryable)]
 pub struct User {
     pub id: i32,
     pub username: String,
@@ -9,13 +11,15 @@ pub struct User {
     pub login_expired_at: DateTime<Utc>
 }
 
-#[derive(Clone, Queryable)]
+#[derive(Associations, Clone, Debug, Identifiable, Queryable)]
 pub struct Claim {
     pub id: i32,
     pub name: String
 }
 
-#[derive(Clone, Queryable)]
+#[derive(Associations, Clone, Debug, Identifiable, Queryable)]
+#[table_name = "claim_user"]
+#[belongs_to(User, foreign_key = "user_id")]
 pub struct ClaimUser {
     pub id: i32,
     pub claim_id: i32,

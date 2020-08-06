@@ -3,18 +3,18 @@ use rocket_contrib::json::Json;
 
 use crate::authentication::{EditUser, User, WebResult};
 use crate::authentication::loginmanager::{self, ApiKey, LoginResult};
-use shipsimulatorbl::authenticator;
+use shipsimulatorbl::authenticator::{self, Session};
 
 #[post("/login", format = "json", data = "<user>")]
 fn login(user: Json<User>) -> Json<LoginResult> {
     let username = user.username.to_string();
     let password = user.password.to_string();
-    let account_exists: bool = authenticator::check_account(&username, &password);
+    let session: Session = authenticator::check_account(&username, &password);
     let mut new_token: String = String::from("");
     let mut error_message: String = String::from("");
     
-    if account_exists {
-        new_token = loginmanager::create_token(&username);
+    if session.login_succeed {
+        new_token = loginmanager::create_token(&username, session);
     } else {
         error_message = String::from("Username and/or password is not correct!");
     }

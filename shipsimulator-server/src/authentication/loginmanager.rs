@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use rocket::Outcome;
 use rocket::request::{self, Request, FromRequest};
 
-use shipsimulatorbl::authenticator;
+use shipsimulatorbl::authenticator::{self, Session};
 
 const USERNAME_CLAIM: &str = "user";
 const ID_CLAIM: &str = "id";
@@ -40,13 +40,19 @@ pub struct LoginResult {
     pub error: String
 }
 
-pub fn create_token(user_id: &str) -> String {
+pub fn create_token(user_id: &str, session: Session) -> String {
     let cookie_id: String = authenticator::generate_cookie_id(user_id);
 
     let key: Hmac<Sha256> = HmacSha256::new_varkey(&SECRET_KEY).unwrap();
-    let mut claims = BTreeMap::new();
-    claims.insert(ID_CLAIM, cookie_id);
-    claims.insert(USERNAME_CLAIM, user_id.to_string());
+    let mut claims: BTreeMap<String, String> = BTreeMap::new();
+    claims.insert(ID_CLAIM.to_string(), cookie_id.to_string());
+    claims.insert(USERNAME_CLAIM.to_string(), user_id.to_string());
+    
+    match session.account {
+        Some(user) => claims = add_claims(claims, user.claims),
+        None => (),
+    };
+    
     println!("{:?}", claims);
     claims.sign_with_key(&key).unwrap()
 }
@@ -75,6 +81,18 @@ impl<'a, 'r> FromRequest<'a, 'r> for ApiKey {
         check_claim(claims)
     }
 }
+
+fn add_claims(mut session_claims: BTreeMap<String, String>, db_claims :Vec<String>) -> BTreeMap<String, String> {
+    let mut claim_id = 0;
+
+    for db_claim_name in db_claims.iter() {
+        let claim_name = String::from(NAME_CLAIM) + &claim_id.to_string();
+        session_claims.insert(claim_name, db_claim_name.to_string());
+        claim_id = claim_id + 1;
+    };
+
+    session_claims
+} 
 
 fn check_claim(claims: BTreeMap<String, String>) -> request::Outcome<ApiKey, ()> {
     if claims.len() != 0 && claims.contains_key(USERNAME_CLAIM) && claims.contains_key(ID_CLAIM) {
