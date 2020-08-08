@@ -1,4 +1,5 @@
 use chrono::{ DateTime, Utc };
+use sodiumoxide::crypto::pwhash::argon2id13;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 
@@ -11,6 +12,20 @@ const LOGIN_EXPIRED_AFTER_DAYS: i64 = 7;
 pub struct Session {
     pub login_succeed: bool,
     pub account: Option<Account>
+}
+
+pub fn change_password(username: &str, new_password: &str) -> bool {
+    sodiumoxide::init().unwrap();
+    let hash = argon2id13::pwhash(
+        new_password.as_bytes(),
+        argon2id13::OPSLIMIT_INTERACTIVE,
+        argon2id13::MEMLIMIT_INTERACTIVE,
+    )
+    .unwrap();
+
+    let password_hash: String = std::str::from_utf8(&hash.0).unwrap().to_string();
+
+    query::set_password_hash(username, &password_hash)
 }
 
 pub fn check_account(username: &str, password: &str) -> Session {
@@ -59,8 +74,14 @@ pub fn generate_cookie_id(username: &str) -> String {
 }
 
 fn validate_password(input_password: &str, account: Account) -> Session {
+    sodiumoxide::init().unwrap();
+    let password_correct: bool = match argon2id13::HashedPassword::from_slice(&account.password_hash) {
+        Some(hp) => argon2id13::pwhash_verify(&hp, input_password.as_bytes()),
+        _ => false,
+    };
+
     Session {
-        login_succeed: account.user.encrypted_password == input_password,
+        login_succeed: password_correct,
         account: Some(account),
     }
 }
