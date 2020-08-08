@@ -4,6 +4,7 @@ use rocket_contrib::json::Json;
 use crate::authentication::{EditUser, User, WebResult};
 use crate::authentication::loginmanager::{self, ApiKey, LoginResult};
 use shipsimulatorbl::authenticator::{self, Session};
+use shipsimulatorcommon::validator::{self, ValidateResult};
 
 #[post("/login", format = "json", data = "<user>")]
 fn login(user: Json<User>) -> Json<LoginResult> {
@@ -26,10 +27,37 @@ fn login(user: Json<User>) -> Json<LoginResult> {
 }
 
 #[post("/changepassword", format = "json", data="<edit_user>")]
-fn change_password(edit_user: Json<EditUser>) -> Json<WebResult> {
+fn change_password(key: ApiKey, edit_user: Json<EditUser>) -> Json<WebResult> {
+    let mut succeed: bool = false;
+    let mut return_message: String = String::from("");
+
+    let result: ValidateResult = validator::password_confirm_compare(&edit_user.new_password, &edit_user.confirm_password);
+
+    if result.correct {
+        let session: Session = authenticator::check_account(&key.username, &edit_user.old_password);
+
+        if session.login_succeed {
+            succeed = authenticator::change_password("oveldman", &edit_user.new_password);
+        }
+        else {
+            return_message = String::from("Username and/or password is not correct!");
+        }
+    }
+    else {
+        return_message = result.error_message;
+    }
+
+    Json(WebResult {
+        succeed: succeed,
+        message: return_message
+    })
+}
+
+#[post("/changepassword", format = "json", data="<_edit_user>", rank = 2)]
+fn change_password_error(_edit_user: Json<EditUser>) -> Json<WebResult> {
     Json(WebResult {
         succeed: false,
-        message: String::from("Not finished yet")
+        message: String::from("You are not logged in!")
     })
 }
 
@@ -46,7 +74,6 @@ fn logout_message() -> &'static str  {
 
 #[get("/succeed")]
 fn succeed(key: ApiKey) -> &'static str {
-    println!("{:?}", key);
     "true - You are logged in!"
 }
 
@@ -56,5 +83,5 @@ fn succeed_error() -> &'static str {
 }
 
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
-    rocket.mount("/auth", routes![login, logout, logout_message, succeed, succeed_error])
+    rocket.mount("/auth", routes![login, logout, logout_message, change_password, change_password_error, succeed, succeed_error])
 }

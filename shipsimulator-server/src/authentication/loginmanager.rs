@@ -53,7 +53,6 @@ pub fn create_token(user_id: &str, session: Session) -> String {
         None => (),
     };
     
-    println!("{:?}", claims);
     claims.sign_with_key(&key).unwrap()
 }
 
