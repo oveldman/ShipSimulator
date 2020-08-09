@@ -2,7 +2,9 @@
 #[macro_use] extern crate rocket;
 extern crate rocket_contrib;
 
-use shipsimulatorserver::authentication::web;
+use shipsimulatorserver::admin;
+use shipsimulatorserver::authentication;
+
 
 #[get("/")]
 fn index() -> &'static str  {
@@ -11,6 +13,7 @@ fn index() -> &'static str  {
 
 fn main() {
     let mut rocket = rocket::ignite().mount("/", routes![index]);
-    rocket = web::mount(rocket);
+    rocket = admin::web::mount(rocket);
+    rocket = authentication::web::mount(rocket);
     rocket.launch();
 }
