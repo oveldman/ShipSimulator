@@ -32,6 +32,10 @@ impl ApiKey {
             claims: new_claims
         }
     }
+
+    pub fn has_role(&self, claim_to_check: &str) -> bool {
+        self.claims.contains(&claim_to_check.to_string())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
