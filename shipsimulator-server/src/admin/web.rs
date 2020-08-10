@@ -21,5 +21,5 @@ fn welcome() -> &'static str  {
 }
 
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
-    rocket.mount("/admin" , routes![get_claims, welcome])
+    rocket.mount("/admin" , routes![get_claims, get_claims_no_authenticatie, welcome])
 }
