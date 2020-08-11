@@ -1,8 +1,9 @@
 use crate::authentication::loginmanager::ApiKey;
+use crate::authentication::ClaimTypes;
 
 #[get("/getclaims")]
 fn get_claims(key: ApiKey) -> &'static str  {
-    if !key.has_role("Admin") {
+    if !key.has_role(&ClaimTypes::Admin.to_string()) {
         return get_claims_no_authenticatie()
     }
 

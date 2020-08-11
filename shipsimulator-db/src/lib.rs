@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod authenticatie;
 pub mod db;
 
